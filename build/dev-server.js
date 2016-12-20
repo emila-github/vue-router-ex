@@ -1,6 +1,8 @@
 require('./check-versions')()
 var config = require('../config')
 if (!process.env.NODE_ENV) process.env.NODE_ENV = JSON.parse(config.dev.env.NODE_ENV)
+var fs = require('fs')
+var rewrite = require('express-urlrewrite')
 var path = require('path')
 var express = require('express')
 var webpack = require('webpack')
@@ -21,6 +23,7 @@ var compiler = webpack(webpackConfig)
 
 var devMiddleware = require('webpack-dev-middleware')(compiler, {
   publicPath: webpackConfig.output.publicPath,
+  //publicPath: '/__build__/',
   stats: {
     colors: true,
     chunks: false
@@ -58,6 +61,14 @@ app.use(hotMiddleware)
 // serve pure static assets
 var staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
 app.use(staticPath, express.static('./static'))
+var srcPath = path.resolve(__dirname, '../src')
+//console.log('src============', srcPath);
+fs.readdirSync(srcPath).forEach(file => {
+  if (fs.statSync(path.join(srcPath, file)).isDirectory()) {
+    app.use(rewrite('/' + file + '/*', '/' + file + '/index.html'))
+  }
+})
+app.use(express.static(srcPath))
 
 module.exports = app.listen(port, function (err) {
   if (err) {

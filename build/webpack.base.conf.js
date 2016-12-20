@@ -1,7 +1,9 @@
 var path = require('path')
+var fs = require('fs')
 var config = require('../config')
 var utils = require('./utils')
 var projectRoot = path.resolve(__dirname, '../')
+//var projectRoot = path.resolve(__dirname, '../src')
 
 var env = process.env.NODE_ENV
 // check env & config/index.js to decide whether to enable CSS source maps for the
@@ -9,26 +11,65 @@ var env = process.env.NODE_ENV
 var cssSourceMapDev = (env === 'development' && config.dev.cssSourceMap)
 var cssSourceMapProd = (env === 'production' && config.build.productionSourceMap)
 var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
+var srcRoot = path.resolve(__dirname, '../src');
+
+var entry = fs.readdirSync(srcRoot).reduce((entries, dir) => {
+  //console.log('reduce===entries=%s, dir=%s',JSON.stringify(entries), dir);
+  const fullDir = path.join(srcRoot, dir)
+  const entry = path.join(fullDir, 'index.html')
+  if (fs.statSync(fullDir).isDirectory() && fs.existsSync(entry)) {
+  entries[dir] = entry
+}
+return entries
+}, {});
+console.log(entry);
+
 
 module.exports = {
-  entry: {
-    app: './src/main.js'
-  },
+  // 多入口单页应用
+  entry: fs.readdirSync(srcRoot).reduce((entries, dir) => {
+    //console.log('reduce===entries=%s, dir=%s',JSON.stringify(entries), dir);
+    const fullDir = path.join(srcRoot, dir)
+    const entry = path.join(fullDir, 'app.js')
+    if (fs.statSync(fullDir).isDirectory() && fs.existsSync(entry)) {
+      entries[dir] = entry
+    }
+    return entries
+    }, {}),
+  //entry: {
+  //  app: './src/main.js'
+  //},
+  //output: {
+  //  path: config.build.assetsRoot,
+  //  // path: path.join(__dirname, '../__build__'),
+  //  chunkFilename: '[id].chunk.js',
+  //  publicPath: process.env.NODE_ENV === 'production' ? config.build.assetsPublicPath : config.dev.assetsPublicPath,
+  //  // publicPath: '/__build__/'
+  //  filename: '[name].js'
+  //},
   output: {
-    path: config.build.assetsRoot,
-    publicPath: process.env.NODE_ENV === 'production' ? config.build.assetsPublicPath : config.dev.assetsPublicPath,
-    filename: '[name].js'
+    path: path.join(__dirname, '__build__'),
+      filename: '[name].js',
+      chunkFilename: '[id].chunk.js',
+      publicPath: '/__build__/js/'
   },
   resolve: {
     extensions: ['', '.js', '.vue', '.json'],
     fallback: [path.join(__dirname, '../node_modules')],
     alias: {
       'vue$': 'vue/dist/vue.common.js',
-      'src': path.resolve(__dirname, '../src'),
-      'assets': path.resolve(__dirname, '../src/assets'),
-      'components': path.resolve(__dirname, '../src/components')
+      'vue-router': 'vue-router/dist/vue-router.common.js',
+      //'src': path.resolve(__dirname, '../src'),
+      //'assets': path.resolve(__dirname, '../src/assets'),
+      //'components': path.resolve(__dirname, '../src/components')
     }
   },
+  // Expose __dirname to allow automatically setting basename.
+  //context: __dirname,
+  //node: {
+  //  __dirname: true
+  //},
+
   resolveLoader: {
     fallback: [path.join(__dirname, '../node_modules')]
   },
